@@ -3,7 +3,7 @@ import Image from "next/image";
 import React, { useState, useEffect, useRef } from "react";
 
 export default function Home() {
-  const [calculated, setCalculated] = useState(true); // Set to false for production!!
+  const [calculated, setCalculated] = useState(false);
   const [monthlyRepayment, setMonthlyRepayment] = useState<number | null>(null);
   const [totalRepayment, setTotalRepayment] = useState<number | null>(null);
   const [mortgageAmountActive, setMortgageAmountActive] = useState(false);
@@ -52,10 +52,12 @@ export default function Home() {
     const numericValue = Number(value);
     setMortgageAmount(numericValue);
 
-    if (calculated && ((value && isNaN(numericValue)) || numericValue <= 0)) {
-      setMortgageAmountError(true);
-    } else {
-      setMortgageAmountError(false);
+    if (calculated) {
+      if (value === "" || isNaN(numericValue) || numericValue <= 0) {
+        setMortgageAmountError(true);
+      } else {
+        setMortgageAmountError(false);
+      }
     }
   };
 
@@ -95,7 +97,8 @@ export default function Home() {
     setMortgageType("interestOnly");
   };
 
-  const clearAll = () => {
+  const clearAll = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
     setMortgageAmount(null);
     setMortgageTerm(null);
     setInterestRate(null);
@@ -112,18 +115,49 @@ export default function Home() {
 
   const calculateRepayments = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!mortgageAmount || !mortgageTerm || !interestRate || !mortgageType) {
+
+    let hasError = false;
+
+    if (!mortgageAmount) {
+      setMortgageAmountError(true);
+      hasError = true;
+    } else {
+      setMortgageAmountError(false);
+    }
+
+    if (!mortgageTerm) {
+      setMortgageTermError(true);
+      hasError = true;
+    } else {
+      setMortgageTermError(false);
+    }
+
+    if (!interestRate) {
+      setInterestRateError(true);
+      hasError = true;
+    } else {
+      setInterestRateError(false);
+    }
+
+    if (!mortgageType) {
+      setMortgageTypeError(true);
+      hasError = true;
+    } else {
+      setMortgageTypeError(false);
+    }
+
+    if (hasError) {
       return;
     }
 
     const principal = mortgageAmount;
-    const monthlyInterestRate = interestRate / 100 / 12;
-    const numberOfPayments = mortgageTerm * 12;
+    const monthlyInterestRate = interestRate! / 100 / 12;
+    const numberOfPayments = mortgageTerm! * 12;
 
     if (mortgageType === "repayment") {
       // Calculate monthly repayment
       const monthlyRepayment =
-        (principal * monthlyInterestRate) /
+        (principal! * monthlyInterestRate) /
         (1 - Math.pow(1 + monthlyInterestRate, -numberOfPayments));
       setMonthlyRepayment(monthlyRepayment);
 
@@ -132,7 +166,7 @@ export default function Home() {
       setTotalRepayment(totalRepayment);
     } else if (mortgageType === "interestOnly") {
       // Calculate monthly interest-only repayment
-      const monthlyRepayment = principal * monthlyInterestRate;
+      const monthlyRepayment = principal! * monthlyInterestRate;
       setMonthlyRepayment(monthlyRepayment);
 
       // Calculate total repayment (interest only)
